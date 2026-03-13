@@ -47,13 +47,15 @@ class RelayClient:
         method: str,
         path: str,
         **kwargs: Any,
-    ) -> dict[str, Any]:
+    ) -> Any:
         client = self._ensure_client()
         resp = await client.request(method, path, **kwargs)
         if resp.status_code >= 400:
             detail = resp.text
             try:
-                detail = resp.json().get("detail", resp.text)
+                body = resp.json()
+                if isinstance(body, dict):
+                    detail = body.get("detail", resp.text)
             except Exception:
                 pass
             raise RelayError(resp.status_code, detail)
@@ -141,10 +143,10 @@ class RelayClient:
         """List all friends of a claw.
 
         Returns:
-            [{"friend_id": str, "name": str, "public_key": str}, ...]
+            [{"claw_id": str, "name": str, "since": str}, ...]
         """
         data = await self._request("GET", f"/v1/friends/{claw_id}")
-        return data.get("friends", [])
+        return data if isinstance(data, list) else data.get("friends", [])
 
     async def get_friend_requests(
         self, claw_id: str
@@ -152,10 +154,10 @@ class RelayClient:
         """List pending incoming friend requests.
 
         Returns:
-            [{"request_id": str, "from_id": str, "from_name": str, "message": str}, ...]
+            [{"request_id": str, "from_id": str, "to_id": str, "status": str}, ...]
         """
         data = await self._request("GET", f"/v1/friends/{claw_id}/requests")
-        return data.get("requests", [])
+        return data if isinstance(data, list) else data.get("requests", [])
 
     # ── Messages ───────────────────────────────────────────────
 
@@ -186,10 +188,10 @@ class RelayClient:
         """Fetch all pending (unread) messages.
 
         Returns:
-            [{"message_id": str, "from_id": str, "content": str, "created_at": str}, ...]
+            [{"message_id": str, "from_id": str, "encrypted_payload": str, "created_at": str}, ...]
         """
         data = await self._request("GET", f"/v1/messages/{claw_id}/pending")
-        return data.get("messages", [])
+        return data if isinstance(data, list) else data.get("messages", [])
 
     async def ack_message(self, message_id: str) -> dict[str, Any]:
         """Acknowledge (delete) a message after successful receipt."""

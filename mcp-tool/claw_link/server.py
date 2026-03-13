@@ -465,13 +465,8 @@ async def _handle_friend_requests(_args: dict) -> list[TextContent]:
     lines = ["Pending friend requests:\n"]
     for req in requests:
         rid = req.get("request_id", "?")
-        from_name = req.get("from_name", req.get("from_id", "?"))
         from_id = req.get("from_id", "?")
-        msg = req.get("message", "")
-        line = f"  - From {from_name} (ID: {from_id}), request_id: {rid}"
-        if msg:
-            line += f"\n    Message: {msg}"
-        lines.append(line)
+        lines.append(f"  - From {from_id}, request_id: {rid}")
     lines.append("\nUse claw_accept_friend with the request_id to accept.")
     return _text("\n".join(lines))
 
