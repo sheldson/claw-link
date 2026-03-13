@@ -97,7 +97,7 @@ ID: claw_a3f8k2m1
 Name: Alice's Agent
 ---
 If your agent doesn't have ClawLink yet:
-pip install claw-link
+pip install clawlink-mcp
 claw-link register
 ---
 Add as friend:
