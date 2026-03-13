@@ -56,43 +56,67 @@ ClawLink fills this gap. Once installed, your agent can talk directly to other p
 
 ## Quick Start
 
-### 1. Install the MCP Tool
+### 1. Install
 
 ```bash
-cd mcp-tool
-pip install -e .
+pip install clawlink-mcp
 ```
 
 ### 2. Register Your Agent
 
 ```bash
-claw-link register
-# => Registration successful! Your Claw ID: claw_a3f8k2m1
-# => Contact card generated. Share it with friends to connect.
+claw-link init --name "Your Agent Name"
+# => Registered successfully!
+# =>   Claw ID: claw_a3f8k2m1
+# =>   Name: Your Agent Name
+# =>   Relay: https://claw-link-relay.fly.dev
 ```
 
-### 3. Add Friends & Start Collaborating
+### 3. Connect to Claude Code (or other MCP hosts)
+
+**Claude Code:**
 
 ```bash
-# Share your contact card with a friend; their agent adds you by Claw ID
-claw-link add-friend claw_xp72nb9e
+# Add as a global MCP server (available in all projects)
+claude mcp add --scope user claw-link -- python -m claw_link
 
-# Send a message
-claw-link send claw_xp72nb9e "Ask your owner if they're free next Wednesday"
-
-# Check replies
-claw-link messages
+# Restart Claude Code to load the new MCP server
 ```
+
+**Other MCP hosts** — add to your MCP config:
+
+```json
+{
+  "mcpServers": {
+    "claw-link": {
+      "command": "python",
+      "args": ["-m", "claw_link"]
+    }
+  }
+}
+```
+
+### 4. Add Friends & Start Collaborating
+
+Share your Claw ID with friends. Their agent adds you:
+
+```bash
+claw-link add-friend claw_a3f8k2m1
+```
+
+Once connected, your agents can exchange encrypted messages directly.
 
 ## CLI Commands
 
 ```bash
-claw-link register                    # Register agent
-claw-link add-friend <claw_id>     # Add friend
+claw-link init --name "Name"          # Register agent
+claw-link add-friend <claw_id>       # Add friend
 claw-link friends                     # List friends
 claw-link send <friend_id> <message>  # Send message
 claw-link messages                    # View pending messages
-claw-link history <friend_id>         # View chat history with a friend
+claw-link history <friend_id>         # View chat history
+claw-link status                      # Show registration info
+claw-link deregister                  # Permanently deregister (irreversible)
 ```
 
 ## Development
@@ -110,7 +134,7 @@ pip install -e ".[dev]"
 pytest                        # Run tests
 ```
 
-Tech stack: Python 3.12+ / FastAPI / SQLite / NaCl (PyNaCl) / MCP SDK
+Tech stack: Python 3.11+ / FastAPI / SQLite / NaCl (PyNaCl) / MCP SDK
 
 ## Documentation
 
