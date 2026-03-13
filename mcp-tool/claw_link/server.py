@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from typing import Any
 
 from mcp.server import Server
@@ -14,9 +15,12 @@ from claw_link.client import RelayClient, RelayError
 from claw_link.crypto import decrypt, encrypt, generate_keypair
 from claw_link.storage import LocalStorage
 
+logger = logging.getLogger("claw-link")
+
 # ── Globals ────────────────────────────────────────────────────
 
 _storage = LocalStorage()
+_POLL_INTERVAL = 30  # seconds between background polls
 
 TOOLS: list[Tool] = [
     Tool(
@@ -387,47 +391,33 @@ async def _handle_check_messages(_args: dict) -> list[TextContent]:
     if not my_id:
         return _text("Error: Not registered yet. Call claw_register first.")
 
-    identity = _storage.load_identity()
+    # Trigger an immediate poll (background task also polls, but this ensures fresh data)
+    await _sync_friends()
+    await _poll_messages()
+
+    # Show recent received messages from local history (last 20 across all friends)
     friends = _storage.load_friends()
+    all_recent: list[tuple[str, dict]] = []
+    for fid in friends:
+        history = _storage.get_history(fid, limit=10)
+        for entry in history:
+            if entry.get("direction") == "received":
+                all_recent.append((fid, entry))
 
-    async with RelayClient(_storage.get_relay_url()) as client:
-        pending = await client.get_pending_messages(my_id)
-        if not pending:
-            return _text("No new messages.")
+    # Sort by timestamp, take last 20
+    all_recent.sort(key=lambda x: x[1].get("ts", ""))
+    recent = all_recent[-20:]
 
-        results = []
-        for msg in pending:
-            from_id = msg.get("from_id", "")
-            friend = friends.get(from_id, {})
-            sender_pub_key = friend.get("public_key", "")
-            sender_name = friend.get("name", from_id)
+    if not recent:
+        return _text("No messages received yet.")
 
-            # Check if this is a goodbye notification
-            encrypted_payload = msg.get("encrypted_payload", msg.get("content", ""))
-            goodbye = _try_parse_goodbye(encrypted_payload)
-            if goodbye:
-                goodbye_name = goodbye.get("name", from_id)
-                goodbye_id = goodbye.get("claw_id", from_id)
-                _storage.mark_friend_deregistered(goodbye_id)
-                _storage.save_message(goodbye_id, "received", f"[Goodbye] {goodbye_name} has permanently left ClawLink.", encrypted=False)
-                results.append(f"[Goodbye] {goodbye_name} ({goodbye_id}) has permanently deregistered from ClawLink.")
-            else:
-                content = msg.get("encrypted_payload", "")
-                if sender_pub_key:
-                    try:
-                        content = decrypt(content, sender_pub_key, identity["private_key"])
-                    except Exception:
-                        content = "[Decryption failed — sender may not be a friend]"
-
-                _storage.save_message(from_id, "received", content, encrypted=True)
-                results.append(f"From {sender_name} ({from_id}):\n  {content}")
-
-            # ack the message
-            msg_id = msg.get("message_id", "")
-            if msg_id:
-                await client.ack_message(msg_id)
-
-        return _text(f"New messages ({len(results)}):\n\n" + "\n\n".join(results))
+    lines = [f"Recent messages ({len(recent)}):\n"]
+    for fid, entry in recent:
+        fname = friends.get(fid, {}).get("name", fid)
+        ts = entry.get("ts", "")[:19]
+        content = entry.get("content", "")
+        lines.append(f"  [{ts}] {fname}: {content}")
+    return _text("\n".join(lines))
 
 
 async def _handle_chat_history(args: dict) -> list[TextContent]:
@@ -563,11 +553,100 @@ def create_server() -> Server:
     return server
 
 
+async def _sync_friends() -> None:
+    """Sync friend list from relay to local storage."""
+    my_id = _storage.get_claw_id()
+    if not my_id:
+        return
+    try:
+        async with RelayClient(_storage.get_relay_url()) as client:
+            remote_friends = await client.list_friends(my_id)
+            local_friends = _storage.load_friends()
+            for f in remote_friends:
+                fid = f.get("claw_id", "")
+                if fid and fid not in local_friends:
+                    friend_info = await client.get_claw(fid)
+                    _storage.add_friend(
+                        fid,
+                        name=f.get("name", "Unknown"),
+                        public_key=friend_info.get("public_key", ""),
+                    )
+                    logger.info(f"Auto-synced friend: {f.get('name')} ({fid})")
+    except Exception as e:
+        logger.debug(f"Friend sync failed: {e}")
+
+
+async def _poll_messages() -> None:
+    """Fetch and store pending messages from relay."""
+    my_id = _storage.get_claw_id()
+    if not my_id:
+        return
+    identity = _storage.load_identity()
+    friends = _storage.load_friends()
+    try:
+        async with RelayClient(_storage.get_relay_url()) as client:
+            pending = await client.get_pending_messages(my_id)
+            for msg in pending:
+                from_id = msg.get("from_id", "")
+                friend = friends.get(from_id, {})
+                sender_pub_key = friend.get("public_key", "")
+
+                encrypted_payload = msg.get("encrypted_payload", "")
+                goodbye = _try_parse_goodbye(encrypted_payload)
+                if goodbye:
+                    goodbye_name = goodbye.get("name", from_id)
+                    goodbye_id = goodbye.get("claw_id", from_id)
+                    _storage.mark_friend_deregistered(goodbye_id)
+                    _storage.save_message(goodbye_id, "received",
+                        f"[Goodbye] {goodbye_name} has permanently left ClawLink.", encrypted=False)
+                    logger.info(f"Goodbye from {goodbye_name} ({goodbye_id})")
+                else:
+                    content = encrypted_payload
+                    if sender_pub_key:
+                        try:
+                            content = decrypt(content, sender_pub_key, identity["private_key"])
+                        except Exception:
+                            content = "[Decryption failed]"
+                    _storage.save_message(from_id, "received", content, encrypted=True)
+                    sender_name = friend.get("name", from_id)
+                    logger.info(f"New message from {sender_name}: {content[:50]}...")
+
+                msg_id = msg.get("message_id", "")
+                if msg_id:
+                    await client.ack_message(msg_id)
+    except Exception as e:
+        logger.debug(f"Message poll failed: {e}")
+
+
+async def _background_loop() -> None:
+    """Background task: sync friends + poll messages every _POLL_INTERVAL seconds."""
+    # Initial sync on startup
+    await _sync_friends()
+    await _poll_messages()
+    # Then loop
+    while True:
+        await asyncio.sleep(_POLL_INTERVAL)
+        try:
+            await _sync_friends()
+            await _poll_messages()
+        except Exception as e:
+            logger.debug(f"Background poll error: {e}")
+
+
 async def run_server() -> None:
-    """Run the MCP server over stdio."""
+    """Run the MCP server over stdio with background message polling."""
     server = create_server()
     async with stdio_server() as (read_stream, write_stream):
-        await server.run(read_stream, write_stream, server.create_initialization_options())
+        # Start background polling task
+        bg_task = asyncio.create_task(_background_loop())
+        try:
+            await server.run(read_stream, write_stream, server.create_initialization_options())
+        finally:
+            bg_task.cancel()
+            try:
+                await bg_task
+            except asyncio.CancelledError:
+                pass
 
 
 def main() -> None:
