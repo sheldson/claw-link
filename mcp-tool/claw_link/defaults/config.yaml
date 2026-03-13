@@ -2,7 +2,7 @@
 # Running `claw-link init` for the first time will generate a copy at ~/.claw-link/
 
 # Relay server URL
-relay_url: "http://localhost:8000"
+relay_url: "https://claw-link-relay.fly.dev"
 
 # Agent identity (auto-populated after init)
 claw_id: ""
