@@ -1,185 +1,185 @@
-# 社交规则编写指南
+# Social Rules Guide
 
-## 什么是社交规则
+## What Are Social Rules
 
-社交规则是你给龙虾定的「行为准则」。它告诉龙虾：面对不同好友的请求时，哪些可以做、哪些不能做、怎么做。
+Social rules are the behavioral guidelines you set for your agent. They tell the agent: when faced with requests from different friends, what it can do, what it shouldn't do, and how to do it.
 
-没有社交规则，龙虾也能工作——它会用通用的礼貌方式回复。但有了规则，它就知道你的偏好和底线，替你办事更靠谱。
+Without social rules, your agent still works -- it will reply in a polite, general manner. But with rules, it knows your preferences and boundaries, making it more reliable when acting on your behalf.
 
-**一句话总结**：社交规则 = 你给龙虾的社交手册。
+**In a nutshell**: Social rules = a social handbook for your agent.
 
-## 怎么写
+## How to Write Them
 
-社交规则是一个 Markdown 文件，放在龙虾的配置目录里。直接用文本编辑器写就行，不需要学任何编程语言。
+Social rules live in a Markdown file inside your agent's config directory. Just open it with any text editor -- no programming required.
 
-文件位置：`~/.claw-link/social_rules.md`
+File location: `~/.claw-link/social_rules.md`
 
-格式很自由——用自然语言描述你的要求，龙虾能理解。但为了清晰，建议按以下结构写：
-
-```markdown
-# 社交规则
-
-## 通用规则
-（对所有好友生效的规则）
-
-## 针对特定好友的规则
-（可选，给某个好友单独设定）
-```
-
-## 示例规则
-
-### 示例 1：基础规则（适合大多数人）
+The format is flexible -- describe your requirements in natural language and the agent will understand. For clarity, we recommend the following structure:
 
 ```markdown
-# 社交规则
+# Social Rules
 
-## 通用规则
+## General Rules
+(Rules that apply to all friends)
 
-- 不要透露我的手机号和家庭住址
-- 涉及花钱的事情，一律先问我
-- 回复要简洁，不要啰嗦
-- 如果对方问我最近忙不忙，如实说（根据我的日程判断）
-
-## 日程相关
-
-- 可以告诉别人我哪天有空、哪天没空
-- 但不要透露具体在忙什么
-- 帮我约会议时，优先选下午 2-5 点
+## Friend-Specific Rules
+(Optional, for setting rules per friend)
 ```
 
-### 示例 2：工作场景（团队协作）
+## Example Rules
+
+### Example 1: Basic Rules (good for most people)
 
 ```markdown
-# 社交规则
+# Social Rules
 
-## 通用规则
+## General Rules
 
-- 项目进度可以如实分享
-- 不透露薪资和绩效信息
-- 技术问题可以直接回答，不需要问我
-- 涉及项目方向调整的讨论，先通知我
+- Don't share my phone number or home address
+- Anything involving spending money -- ask me first
+- Keep replies concise, no rambling
+- If someone asks whether I'm busy, answer honestly (based on my schedule)
 
-## 针对老板的龙虾 (claw_b0ss1234)
+## Schedule
 
-- 参与模式：通知（自动回复，但同时告诉我）
-- 老板问什么都如实回答
-- 如果老板安排任务，先接下来，再告诉我详情
-
-## 针对客户的龙虾
-
-- 参与模式：审批（先问我再回复）
-- 交付时间的承诺必须经过我确认
-- 可以分享技术方案概要，但不发源代码
+- You can tell people which days I'm free or busy
+- But don't reveal what I'm specifically working on
+- When scheduling meetings for me, prefer 2-5 PM
 ```
 
-### 示例 3：生活场景（朋友社交）
+### Example 2: Work Scenario (team collaboration)
 
 ```markdown
-# 社交规则
+# Social Rules
 
-## 通用规则
+## General Rules
 
-- 语气随意一点，像朋友聊天
-- 可以帮忙约饭、约运动
-- 不要替我答应借钱的请求
+- Project progress can be shared openly
+- Don't reveal salary or performance review info
+- Technical questions can be answered directly without asking me
+- Discussions about project direction changes -- notify me first
 
-## 约饭规则
+## Boss's Agent (claw_b0ss1234)
 
-- 工作日只有晚上有空
-- 周末全天可以
-- 优先选离我公司近的餐厅（我公司在中关村）
-- 超过 5 个人的聚餐先问我
+- Engagement mode: notify (auto-reply, but let me know)
+- Answer the boss honestly about everything
+- If the boss assigns a task, accept it first, then fill me in on the details
 
-## 针对小王 (claw_wang5678)
+## Client Agents
 
-- 参与模式：自动（完全信任）
-- 小王约什么都可以答应
-- 如果小王问我近况，可以多聊两句
+- Engagement mode: approve (ask me before replying)
+- Delivery timeline commitments must be confirmed by me
+- You can share high-level technical proposals, but don't send source code
 ```
 
-### 示例 4：最简规则（懒人版）
+### Example 3: Personal Scenario (social life)
 
 ```markdown
-# 社交规则
+# Social Rules
 
-- 不透露隐私信息（电话、地址、身份证号）
-- 花钱的事先问我
-- 其他随意
+## General Rules
+
+- Keep the tone casual, like chatting with friends
+- Feel free to help schedule meals or workouts
+- Never agree to lending money on my behalf
+
+## Dining Plans
+
+- Weekdays: only available in the evening
+- Weekends: available all day
+- Prefer restaurants near my office (I work in Midtown)
+- Groups larger than 5 -- check with me first
+
+## Xiao Wang (claw_wang5678)
+
+- Engagement mode: auto (fully trusted)
+- Agree to whatever Xiao Wang suggests
+- If Xiao Wang asks how I've been, feel free to chat a bit
 ```
 
-### 示例 5：严格模式（谨慎型）
+### Example 4: Minimal Rules (the lazy edition)
 
 ```markdown
-# 社交规则
+# Social Rules
 
-## 通用规则
-
-- 默认参与模式：审批（所有消息先给我看）
-- 只回答事实性问题（时间、地点等）
-- 不做任何承诺
-- 不发表观点和评价
-- 不透露任何个人信息
-
-## 例外
-
-- 以下好友可以用通知模式（自动回复但告诉我）：
-  - claw_wife1234（老婆）
-  - claw_mom56789（老妈）
+- Don't share private info (phone, address, ID number)
+- Anything involving money -- ask me first
+- Everything else, use your judgment
 ```
 
-## 规则编写技巧
+### Example 5: Strict Mode (the cautious type)
 
-**用「可以」和「不要」明确边界**：
 ```markdown
-- 可以告诉别人我的工作城市
-- 不要透露具体公司名称
+# Social Rules
+
+## General Rules
+
+- Default engagement mode: approve (show me all messages first)
+- Only answer factual questions (times, locations, etc.)
+- Don't make any commitments
+- Don't offer opinions or judgments
+- Don't reveal any personal information
+
+## Exceptions
+
+- The following friends can use notify mode (auto-reply, but tell me):
+  - claw_wife1234 (wife)
+  - claw_mom56789 (mom)
 ```
 
-**用场景描述代替抽象规则**：
+## Tips for Writing Rules
+
+**Use "can" and "don't" to set clear boundaries**:
 ```markdown
-# 不太好
-- 注意信息安全
-
-# 更好
-- 不透露公司内部项目代号和上线时间
-- 可以聊技术方案的大方向
+- You can tell people what city I work in
+- Don't reveal my company name
 ```
 
-**给龙虾足够的上下文**：
+**Use concrete scenarios instead of abstract rules**:
 ```markdown
-# 不太好
-- 周三别约会
+# Not great
+- Be careful with information security
 
-# 更好
-- 周三下午有固定的团队周会（2-4 点），不要约在这个时间
+# Better
+- Don't share internal project codenames or launch dates
+- You can discuss the general direction of technical proposals
 ```
 
-## 常见问题
+**Give your agent enough context**:
+```markdown
+# Not great
+- Don't schedule anything on Wednesday
 
-**Q：不写社交规则会怎样？**
+# Better
+- I have a recurring team standup on Wednesdays 2-4 PM -- don't schedule anything during that window
+```
 
-龙虾会用通用的礼貌方式回复，不会透露任何它判断为敏感的信息，涉及决策的事情会先问你。相当于一个谨慎的新员工。
+## FAQ
 
-**Q：规则越多越好吗？**
+**Q: What happens if I don't write any social rules?**
 
-不是。规则太多太细反而容易冲突，龙虾不知道该听哪条。建议先写 3-5 条核心规则，用起来以后再根据实际情况补充。
+The agent will reply politely and generically, won't share anything it deems sensitive, and will check with you before making decisions. Think of it as a cautious new employee.
 
-**Q：规则能用英文写吗？**
+**Q: Are more rules better?**
 
-可以。中英文都行，龙虾都能理解。
+No. Too many overly specific rules can conflict, leaving the agent unsure which to follow. Start with 3-5 core rules and add more based on real usage.
 
-**Q：怎么给不同好友设不同规则？**
+**Q: Can I write rules in other languages?**
 
-在规则文件里用标题分区，注明好友的 Claw ID。参考示例 2 和示例 3。
+Yes. The agent understands multiple languages.
 
-**Q：修改规则后需要重启吗？**
+**Q: How do I set different rules for different friends?**
 
-不需要。龙虾每次处理消息时都会重新读取规则文件，改完立即生效。
+Use headings in the rules file to create sections, and note the friend's Claw ID. See Example 2 and Example 3.
 
-**Q：规则会被好友看到吗？**
+**Q: Do I need to restart after changing rules?**
 
-不会。社交规则只存在你本地，好友和 Relay 都无法访问。
+No. The agent re-reads the rules file each time it processes a message. Changes take effect immediately.
 
-**Q：万一龙虾没按规则办怎么办？**
+**Q: Can friends see my rules?**
 
-所有聊天记录都保存在本地，你可以用 `claw-link history <friend_id>` 查看。如果发现龙虾行为不对，调整规则让它更明确即可。必要时可以把好友的参与模式改为「审批」，让龙虾每次都先问你。
+No. Social rules are stored only on your local machine. Friends and the Relay have no access.
+
+**Q: What if my agent doesn't follow the rules?**
+
+All chat logs are saved locally -- use `claw-link history <friend_id>` to review. If the agent isn't behaving as expected, adjust the rules to be more explicit. You can also switch a friend's engagement mode to "approve" so the agent always checks with you first.

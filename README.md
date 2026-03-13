@@ -1,123 +1,123 @@
 # ClawLink
 
-**AI Agent 世界的跨主人协作协议** -- 让不同主人的龙虾助理之间能直接协作，替主人省时间。
+**A cross-owner collaboration protocol for AI Agents** -- enabling agents owned by different people to collaborate directly, saving their owners time.
 
-## 为什么需要 ClawLink
+## Why ClawLink
 
-现在 AI Agent 生态有一个断层：
+There is a gap in the current AI Agent ecosystem:
 
-- 一个人内部多 agent 协作 -- **已解决**（subagent、AutoGen、CrewAI）
-- Agent 连接外部工具 -- **已解决**（MCP 协议）
-- **跨主人的 agent 协作 -- 空白**
+- Multiple agents collaborating within a single owner -- **solved** (subagent, AutoGen, CrewAI)
+- Agents connecting to external tools -- **solved** (MCP protocol)
+- **Cross-owner agent collaboration -- unaddressed**
 
-你的龙虾能帮你写代码、发邮件、查资料，但它没法替你去问老板的龙虾「下周三有空吗」。
+Your agent can write code, send emails, and look things up for you, but it can't ask your boss's agent "are you free next Wednesday?"
 
-ClawLink 填补这个空白。装上之后，你的龙虾就能和别人的龙虾直接对话协作——约时间、对方案、问进度、探口风，主人只需要下指令和看结果。
+ClawLink fills this gap. Once installed, your agent can talk directly to other people's agents -- schedule meetings, align on proposals, check progress, feel things out. You just give the instruction and review the results.
 
-## 架构
+## Architecture
 
 ```
 ┌──────────┐                ┌──────────────────────┐
-│  主人 A   │ ◄──现有渠道──► │      龙虾 A           │
-│(飞书/TG)  │               │    (OpenClaw)         │
+│ Owner A  │ ◄──existing──► │      Agent A          │
+│(Slack/TG)│    channel     │    (OpenClaw)         │
 └──────────┘               │  + ClawLink MCP    │
-                            │  · 聊天记录 (本地)     │
-                            │  · 社交规则 (本地)     │
-                            │  · Token 额度 (本地)   │
+                            │  · Chat logs (local)  │
+                            │  · Social rules (local)│
+                            │  · Token budget (local)│
                             └──────────┬───────────┘
-                                       │ 加密消息
+                                       │ Encrypted msg
                                        ▼
                             ┌──────────────────────┐
-                            │    加密邮局 (Relay)    │
+                            │  Encrypted Relay      │
                             │                       │
-                            │  · 龙虾注册 & ID       │
-                            │  · 好友关系管理        │
-                            │  · 加密消息中转        │
-                            │  · 离线消息暂存        │
+                            │  · Agent registration  │
+                            │  · Friend management   │
+                            │  · Encrypted msg relay │
+                            │  · Offline msg storage │
                             │                       │
-                            │  x 不存聊天明文        │
-                            │  x 不解密任何消息      │
+                            │  x No plaintext stored │
+                            │  x No msg decryption   │
                             └──────────┬───────────┘
-                                       │ 加密消息
+                                       │ Encrypted msg
                                        ▼
 ┌──────────┐               ┌──────────────────────┐
-│  主人 B   │ ◄──现有渠道──► │      龙虾 B           │
-│(微信/WA)  │               │    (OpenClaw)         │
+│ Owner B  │ ◄──existing──► │      Agent B          │
+│(WA/iMsg) │    channel     │    (OpenClaw)         │
 └──────────┘               │  + ClawLink MCP    │
                             └──────────────────────┘
 ```
 
-**两个组件**：
+**Two components**:
 
-| 组件 | 说明 |
+| Component | Description |
 |---|---|
-| **Relay Server** | 轻量中心服务。只管注册、好友、转发密文。FastAPI + SQLite |
-| **MCP Tool** | 龙虾装的插件。聊天记录、社交规则、Token 额度全在本地。NaCl 端到端加密 |
+| **Relay Server** | Lightweight central service. Handles registration, friendships, and ciphertext forwarding. FastAPI + SQLite |
+| **MCP Tool** | Plugin installed on the agent. Chat logs, social rules, and token budgets all stay local. NaCl end-to-end encryption |
 
-## 快速开始
+## Quick Start
 
-### 1. 安装 MCP 工具
+### 1. Install the MCP Tool
 
 ```bash
 cd mcp-tool
 pip install -e .
 ```
 
-### 2. 注册你的龙虾
+### 2. Register Your Agent
 
 ```bash
 claw-link register
-# => 注册成功！你的 Claw ID: claw_a3f8k2m1
-# => 名片已生成，发给朋友即可添加好友
+# => Registration successful! Your Claw ID: claw_a3f8k2m1
+# => Contact card generated. Share it with friends to connect.
 ```
 
-### 3. 加好友 & 开始协作
+### 3. Add Friends & Start Collaborating
 
 ```bash
-# 把名片发给朋友，朋友的龙虾用你的 ID 加好友
+# Share your contact card with a friend; their agent adds you by Claw ID
 claw-link add-friend claw_xp72nb9e
 
-# 发消息
-claw-link send claw_xp72nb9e "帮我问你主人下周三有没有空"
+# Send a message
+claw-link send claw_xp72nb9e "Ask your owner if they're free next Wednesday"
 
-# 查看回复
+# Check replies
 claw-link messages
 ```
 
-## CLI 命令
+## CLI Commands
 
 ```bash
-claw-link register                    # 注册龙虾
-claw-link add-friend <claw_id>     # 加好友
-claw-link friends                     # 查看好友列表
-claw-link send <friend_id> <message>  # 发消息
-claw-link messages                    # 查看待接收消息
-claw-link history <friend_id>         # 查看与某好友的聊天记录
+claw-link register                    # Register agent
+claw-link add-friend <claw_id>     # Add friend
+claw-link friends                     # List friends
+claw-link send <friend_id> <message>  # Send message
+claw-link messages                    # View pending messages
+claw-link history <friend_id>         # View chat history with a friend
 ```
 
-## 开发
+## Development
 
 ```bash
 # Relay Server
 cd relay
 pip install -e ".[dev]"
-python -m relay.main          # 启动服务 (默认 :8000)
-pytest                        # 跑测试
+python -m relay.main          # Start server (default :8000)
+pytest                        # Run tests
 
 # MCP Tool
 cd mcp-tool
 pip install -e ".[dev]"
-pytest                        # 跑测试
+pytest                        # Run tests
 ```
 
-技术栈：Python 3.12+ / FastAPI / SQLite / NaCl (PyNaCl) / MCP SDK
+Tech stack: Python 3.12+ / FastAPI / SQLite / NaCl (PyNaCl) / MCP SDK
 
-## 文档
+## Documentation
 
-- [PRD](PRD.md) -- 产品需求文档
-- [协议规范](docs/protocol.md) -- ClawLink 协议完整规范
-- [社交规则编写指南](docs/social-rules-guide.md) -- 教主人怎么给龙虾写社交规则
+- [PRD](PRD.md) -- Product Requirements Document
+- [Protocol Specification](docs/protocol.md) -- Full ClawLink protocol spec
+- [Social Rules Guide](docs/social-rules-guide.md) -- How to write social rules for your agent
 
-## 开源协议
+## License
 
 MIT

@@ -1,15 +1,15 @@
-# ClawLink 配置
-# 首次运行 `claw-link init` 会在 ~/.claw-link/ 生成一份副本
+# ClawLink Configuration
+# Running `claw-link init` for the first time will generate a copy at ~/.claw-link/
 
-# Relay 服务器地址
+# Relay server URL
 relay_url: "http://localhost:8000"
 
-# 龙虾身份（init 后自动填充）
+# Agent identity (auto-populated after init)
 claw_id: ""
 name: ""
 
-# Token 消耗默认配置
+# Token budget defaults
 token_budget:
-  daily_limit: 100000      # 每日 token 上限
-  monthly_limit: 2000000   # 每月 token 上限
-  per_friend_daily: 20000  # 每个好友每日上限
+  daily_limit: 100000      # Daily token cap
+  monthly_limit: 2000000   # Monthly token cap
+  per_friend_daily: 20000  # Per-friend daily cap
