@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "f1f949edcb4e3a23",
+        "id": "b50b13f1fd6fefd2",
         "type": "tabs",
         "children": [
           {
-            "id": "b46b7ce844124e58",
+            "id": "1d383a5fe8eb73c3",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -169,14 +169,25 @@
       "bases:创建新数据库": false
     }
   },
-  "active": "b46b7ce844124e58",
+  "active": "1d383a5fe8eb73c3",
   "lastOpenFiles": [
-    "CLAUDE.md",
-    "docs",
-    "mcp-tool/lobster_link",
-    "mcp-tool",
-    "relay/relay/routes",
-    "relay/relay",
-    "relay"
+    "docs/site/index.html",
+    "docs/site",
+    "mcp-tool/claw_link/defaults/social_rules.md",
+    "mcp-tool/claw_link/defaults/config.yaml",
+    "mcp-tool/claw_link/defaults/__init__.py",
+    "mcp-tool/claw_link/__pycache__/storage.cpython-311.pyc",
+    "mcp-tool/claw_link/__pycache__/server.cpython-311.pyc",
+    "mcp-tool/claw_link/__pycache__/crypto.cpython-311.pyc",
+    "mcp-tool/claw_link/__pycache__/client.cpython-311.pyc",
+    "mcp-tool/claw_link/__pycache__/cli.cpython-311.pyc",
+    "mcp-tool/claw_link/__pycache__/__init__.cpython-311.pyc",
+    "mcp-tool/claw_link/storage.py",
+    "PRD.md",
+    "README.md",
+    "docs/social-rules-guide.md",
+    "docs/protocol.md",
+    "mcp-tool/lobster_link/defaults/social_rules.md",
+    "CLAUDE.md"
   ]
 }
