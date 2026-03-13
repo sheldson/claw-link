@@ -1,13 +1,13 @@
-# CLAUDE.md — LobsterLink 开发规范
+# CLAUDE.md — ClawLink 开发规范
 
 ## 项目概述
 
-LobsterLink 是 AI Agent 世界的跨主人协作协议。让不同主人的 OpenClaw 龙虾助理之间能直接协作——约时间、交换信息、协调任务，替主人省时间。
+ClawLink 是 AI Agent 世界的跨主人协作协议。让不同主人的 OpenClaw 龙虾助理之间能直接协作——约时间、交换信息、协调任务，替主人省时间。
 
 ## 目录结构
 
 ```
-lobster-link/
+claw-link/
 ├── CLAUDE.md              # 开发规范（本文件）
 ├── PRD.md                 # 产品需求文档
 ├── relay/                 # 加密邮局（中心服务）
@@ -18,8 +18,8 @@ lobster-link/
 │   │   └── routes/        # API 路由
 │   ├── pyproject.toml
 │   └── Dockerfile
-├── mcp-tool/              # LobsterLink MCP 工具（龙虾装的插件）
-│   ├── lobster_link/
+├── mcp-tool/              # ClawLink MCP 工具（龙虾装的插件）
+│   ├── claw_link/
 │   │   ├── server.py      # MCP server 入口
 │   │   ├── client.py      # Relay API 客户端
 │   │   ├── storage.py     # 本地存储（聊天记录、规则）
@@ -76,12 +76,12 @@ pytest                                  # 跑测试
 # MCP Tool
 cd mcp-tool
 pip install -e ".[dev]"
-lobster-link register                   # 注册龙虾
-lobster-link add-friend <lobster_id>    # 加好友
-lobster-link friends                    # 查看好友列表
-lobster-link send <friend_id> <message> # 发消息
-lobster-link messages                   # 查看消息
-lobster-link history <friend_id>        # 查看聊天记录
+claw-link register                   # 注册龙虾
+claw-link add-friend <claw_id>    # 加好友
+claw-link friends                    # 查看好友列表
+claw-link send <friend_id> <message> # 发消息
+claw-link messages                   # 查看消息
+claw-link history <friend_id>        # 查看聊天记录
 ```
 
 ## API 概览
@@ -91,7 +91,7 @@ lobster-link history <friend_id>        # 查看聊天记录
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | POST | /v1/register | 注册龙虾 |
-| GET | /v1/lobsters/{id} | 查询龙虾信息 |
+| GET | /v1/claws/{id} | 查询龙虾信息 |
 | POST | /v1/friends/request | 发送好友请求 |
 | POST | /v1/friends/accept | 接受好友请求 |
 | GET | /v1/friends/{id} | 好友列表 |

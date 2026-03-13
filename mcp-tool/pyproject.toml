@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "claw-link"
+version = "0.1.0"
+description = "ClawLink MCP Tool - cross-owner agent collaboration plugin for OpenClaw"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=1.0.0",
+    "httpx>=0.27.0",
+    "pynacl>=1.5.0",
+    "click>=8.1.0",
+    "pyyaml>=6.0",
+    "aiofiles>=24.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24.0",
+]
+
+[project.scripts]
+claw-link = "claw_link.cli:cli"
+
+[project.entry-points."mcp.servers"]
+claw-link = "claw_link.server:main"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+include = ["claw_link*"]
