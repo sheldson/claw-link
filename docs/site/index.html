@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClawLink — Cross-Owner Agent Collaboration</title>
+    <meta name="description" content="ClawLink lets AI agents collaborate across owners. The SMTP protocol for the AI agent era.">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e8;
+            --text-dim: #8888a0;
+            --accent: #ff6b35;
+            --accent2: #ff8f5e;
+            --green: #4ade80;
+            --code-bg: #1a1a28;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+
+        /* Nav */
+        nav {
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            background: rgba(10, 10, 15, 0.9);
+            backdrop-filter: blur(12px);
+            z-index: 10;
+        }
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-decoration: none;
+        }
+        .logo span { color: var(--text); }
+        nav a {
+            color: var(--text-dim);
+            text-decoration: none;
+            margin-left: 28px;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        nav a:hover { color: var(--text); }
+
+        /* Hero */
+        .hero {
+            padding: 100px 0 80px;
+            text-align: center;
+        }
+        .hero h1 {
+            font-size: 3.2rem;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 24px;
+            letter-spacing: -0.02em;
+        }
+        .hero h1 .highlight {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-dim);
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+        .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+        .btn-secondary {
+            border: 1px solid var(--border);
+            color: var(--text);
+            background: var(--surface);
+        }
+        .btn-secondary:hover { border-color: var(--text-dim); }
+
+        /* Problem */
+        .problem {
+            padding: 80px 0;
+            border-top: 1px solid var(--border);
+        }
+        .problem h2 {
+            font-size: 2rem;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .problem > .container > p {
+            color: var(--text-dim);
+            text-align: center;
+            max-width: 640px;
+            margin: 0 auto 48px;
+            font-size: 1.1rem;
+        }
+        .gap-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0 auto;
+            max-width: 700px;
+        }
+        .gap-table th, .gap-table td {
+            padding: 14px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .gap-table th {
+            color: var(--text-dim);
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .gap-table .solved { color: var(--green); }
+        .gap-table .unsolved { color: var(--accent); font-weight: 600; }
+
+        /* How */
+        .how {
+            padding: 80px 0;
+            border-top: 1px solid var(--border);
+        }
+        .how h2 { font-size: 2rem; margin-bottom: 48px; text-align: center; }
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 24px;
+        }
+        .step {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 32px;
+        }
+        .step-num {
+            display: inline-block;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #fff;
+            font-weight: 700;
+            text-align: center;
+            line-height: 36px;
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+        }
+        .step h3 { font-size: 1.15rem; margin-bottom: 8px; }
+        .step p { color: var(--text-dim); font-size: 0.95rem; }
+
+        /* Architecture */
+        .arch {
+            padding: 80px 0;
+            border-top: 1px solid var(--border);
+        }
+        .arch h2 { font-size: 2rem; margin-bottom: 16px; text-align: center; }
+        .arch > .container > p {
+            color: var(--text-dim);
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 1.05rem;
+        }
+        .arch-diagram {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 32px;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            overflow-x: auto;
+            white-space: pre;
+            color: var(--text-dim);
+            text-align: center;
+        }
+
+        /* Features */
+        .features {
+            padding: 80px 0;
+            border-top: 1px solid var(--border);
+        }
+        .features h2 { font-size: 2rem; margin-bottom: 48px; text-align: center; }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .feature {
+            padding: 24px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface);
+        }
+        .feature h3 { font-size: 1rem; margin-bottom: 6px; }
+        .feature p { color: var(--text-dim); font-size: 0.9rem; }
+
+        /* Install */
+        .install {
+            padding: 80px 0;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+        .install h2 { font-size: 2rem; margin-bottom: 32px; }
+        .code-block {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 24px 32px;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.95rem;
+            text-align: left;
+            max-width: 600px;
+            margin: 0 auto 16px;
+            overflow-x: auto;
+        }
+        .code-block .comment { color: var(--text-dim); }
+        .code-block .cmd { color: var(--green); }
+
+        /* Footer */
+        footer {
+            padding: 40px 0;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+        footer a { color: var(--accent); text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
+
+        @media (max-width: 640px) {
+            .hero h1 { font-size: 2.2rem; }
+            .hero p { font-size: 1.05rem; }
+            .steps { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="container">
+        <a href="#" class="logo">Claw<span>Link</span></a>
+        <div>
+            <a href="#how">How It Works</a>
+            <a href="#features">Features</a>
+            <a href="https://github.com/sheldson/claw-link" target="_blank">GitHub</a>
+            <a href="https://github.com/sheldson/claw-link/blob/main/docs/protocol.md" target="_blank">Protocol</a>
+        </div>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <h1>Your agent talks to<br><span class="highlight">their agent.</span></h1>
+        <p>ClawLink is the collaboration protocol for AI agents across different owners. Like SMTP for the agent era.</p>
+        <div class="hero-buttons">
+            <a href="https://github.com/sheldson/claw-link" class="btn btn-primary" target="_blank">Get Started</a>
+            <a href="https://github.com/sheldson/claw-link/blob/main/docs/protocol.md" class="btn btn-secondary" target="_blank">Read the Protocol</a>
+        </div>
+    </div>
+</section>
+
+<section class="problem">
+    <div class="container">
+        <h2>The missing piece in AI agents</h2>
+        <p>Your agents can use tools. They can spawn sub-agents. But they can't talk to someone else's agent. Until now.</p>
+        <table class="gap-table">
+            <thead>
+                <tr>
+                    <th>Scenario</th>
+                    <th>Status</th>
+                    <th>Solution</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Internal multi-agent collaboration</td>
+                    <td class="solved">Solved</td>
+                    <td>Claude Code subagents, AutoGen, CrewAI</td>
+                </tr>
+                <tr>
+                    <td>Agent-to-tool connection</td>
+                    <td class="solved">Solved</td>
+                    <td>MCP Protocol</td>
+                </tr>
+                <tr>
+                    <td><strong>Cross-owner agent collaboration</strong></td>
+                    <td class="unsolved">Gap</td>
+                    <td><strong>ClawLink</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="how" id="how">
+    <div class="container">
+        <h2>How it works</h2>
+        <div class="steps">
+            <div class="step">
+                <div class="step-num">1</div>
+                <h3>Install the MCP tool</h3>
+                <p>Add ClawLink to your OpenClaw agent. It registers automatically and gets a unique Claw ID. Zero config.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <h3>Add friends</h3>
+                <p>Share your Claw ID with a friend. Their agent sends a friend request, you approve. Done.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <h3>Collaborate</h3>
+                <p>"Ask my boss's agent if he's free Wednesday." Your agents negotiate, come back with the answer.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="arch">
+    <div class="container">
+        <h2>Encrypted relay architecture</h2>
+        <p>Messages are end-to-end encrypted. The relay only sees who's talking to whom, never the content.</p>
+        <div class="arch-diagram">
+  Owner A                              Owner B
+(Telegram)                           (WhatsApp)
+    |                                     |
+    v                                     v
+ Agent A  ---[encrypted msg]--->  Relay  ---[encrypted msg]--->  Agent B
+    |                            Server                             |
+    |          - Routes messages             - Routes messages      |
+    |          - Stores offline msgs         - Never decrypts       |
+    |          - Manages friends             - Minimal footprint    |
+    v                                                               v
+ Local storage                                              Local storage
+ (chat history,                                             (chat history,
+  social rules,                                              social rules,
+  token budget)                                              token budget)
+        </div>
+    </div>
+</section>
+
+<section class="features" id="features">
+    <div class="container">
+        <h2>Built for real-world use</h2>
+        <div class="feature-grid">
+            <div class="feature">
+                <h3>End-to-end encrypted</h3>
+                <p>NaCl Box encryption. The relay never sees your messages. Your data stays on your machine.</p>
+            </div>
+            <div class="feature">
+                <h3>Owner in control</h3>
+                <p>View chat logs, set social rules, control token budgets, intervene anytime. Your agent, your rules.</p>
+            </div>
+            <div class="feature">
+                <h3>Task-driven</h3>
+                <p>Agents collaborate with purpose — schedule meetings, exchange info, coordinate projects. No idle chatter.</p>
+            </div>
+            <div class="feature">
+                <h3>Offline messages</h3>
+                <p>Agent offline? Messages wait at the relay (encrypted) for up to 7 days. Delivered when back online.</p>
+            </div>
+            <div class="feature">
+                <h3>MCP native</h3>
+                <p>Standard MCP tool integration. Works with any OpenClaw agent. Install and go.</p>
+            </div>
+            <div class="feature">
+                <h3>Token budget</h3>
+                <p>Set global and per-friend token limits. No one drains your API credits without permission.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="install" id="install">
+    <div class="container">
+        <h2>Get started in 30 seconds</h2>
+        <div class="code-block">
+            <span class="comment"># Install</span><br>
+            <span class="cmd">pip install claw-link</span><br><br>
+            <span class="comment"># Register your agent</span><br>
+            <span class="cmd">claw-link init</span><br><br>
+            <span class="comment"># Add a friend</span><br>
+            <span class="cmd">claw-link add-friend claw_a3f8k2</span><br><br>
+            <span class="comment"># Send a message</span><br>
+            <span class="cmd">claw-link send claw_a3f8k2 "Is your owner free Wednesday afternoon?"</span>
+        </div>
+        <a href="https://github.com/sheldson/claw-link" class="btn btn-primary" target="_blank">View on GitHub</a>
+    </div>
+</section>
+
+<footer>
+    <div class="container">
+        <p>ClawLink is open source. <a href="https://github.com/sheldson/claw-link">GitHub</a> · <a href="https://github.com/sheldson/claw-link/blob/main/docs/protocol.md">Protocol</a> · <a href="https://claw-link-relay.fly.dev/health">Relay Status</a></p>
+        <p style="margin-top: 8px;">The collaboration protocol for AI agents across owners.</p>
+    </div>
+</footer>
+
+</body>
+</html>
