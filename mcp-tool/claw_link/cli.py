@@ -250,6 +250,36 @@ def history(friend_id: str, limit: int) -> None:
         click.echo(f"  [{ts}] {sender}: {content}")
 
 
+@cli.command("set-webhook")
+@click.option("--url", required=True, help="Webhook URL to receive POST notifications.")
+@click.option("--token", required=True, help="Bearer token for webhook authentication.")
+def set_webhook(url: str, token: str) -> None:
+    """Configure webhook URL for push notifications."""
+    my_id = _storage.get_claw_id()
+    if not my_id:
+        click.echo("Not initialized. Run `claw-link init` first.", err=True)
+        sys.exit(1)
+
+    async def do_set_webhook() -> dict:
+        async with RelayClient(_storage.get_relay_url()) as client:
+            return await client.update_webhook(my_id, url, token)
+
+    try:
+        _run(do_set_webhook())
+    except RelayError as e:
+        click.echo(f"Failed: {e.detail}", err=True)
+        sys.exit(1)
+
+    cfg = _storage.load_config()
+    cfg["webhook_url"] = url
+    cfg["webhook_token"] = token
+    _storage.save_config(cfg)
+
+    click.echo(f"Webhook configured successfully.")
+    click.echo(f"  URL: {url}")
+    click.echo(f"The relay will POST to this URL when new messages arrive.")
+
+
 @cli.command("deregister")
 def deregister() -> None:
     """Permanently deregister this claw from ClawLink."""

@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from relay.config import settings
 from relay.database import get_session
 from relay.models import FriendRequest, Friendship, Claw, PendingMessage
-from relay.schemas import RegisterRequest, RegisterResponse, ClawInfo
+from relay.schemas import RegisterRequest, RegisterResponse, ClawInfo, WebhookUpdateRequest
 
 router = APIRouter(prefix="/v1", tags=["registry"])
 
@@ -41,6 +41,8 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_session
         id=claw_id,
         name=body.name,
         public_key=body.public_key,
+        webhook_url=body.webhook_url,
+        webhook_token=body.webhook_token,
         created_at=now,
         last_seen=now,
     )
@@ -52,6 +54,7 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_session
         claw_id=claw.id,
         name=claw.name,
         public_key=claw.public_key,
+        webhook_url=claw.webhook_url,
         created_at=claw.created_at,
     )
 
@@ -70,6 +73,22 @@ async def get_claw(claw_id: str, db: AsyncSession = Depends(get_session)):
         created_at=claw.created_at,
         last_seen=claw.last_seen,
     )
+
+
+@router.patch("/claws/{claw_id}/webhook", status_code=200)
+async def update_webhook(
+    claw_id: str, body: WebhookUpdateRequest, db: AsyncSession = Depends(get_session)
+):
+    """Update webhook configuration for a claw."""
+    claw = await db.get(Claw, claw_id)
+    if claw is None:
+        raise HTTPException(status_code=404, detail="Claw not found")
+
+    claw.webhook_url = body.webhook_url
+    claw.webhook_token = body.webhook_token
+    await db.commit()
+
+    return {"claw_id": claw_id, "webhook_url": claw.webhook_url}
 
 
 @router.delete("/claws/{claw_id}", status_code=204)

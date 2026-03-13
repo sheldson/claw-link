@@ -65,17 +65,24 @@ class RelayClient:
 
     # ── Registration ───────────────────────────────────────────
 
-    async def register(self, name: str, public_key: str) -> dict[str, Any]:
+    async def register(
+        self,
+        name: str,
+        public_key: str,
+        webhook_url: str | None = None,
+        webhook_token: str | None = None,
+    ) -> dict[str, Any]:
         """Register a new claw on the relay.
 
         Returns:
             {"claw_id": str, "name": str, ...}
         """
-        return await self._request(
-            "POST",
-            "/v1/register",
-            json={"name": name, "public_key": public_key},
-        )
+        payload: dict[str, Any] = {"name": name, "public_key": public_key}
+        if webhook_url is not None:
+            payload["webhook_url"] = webhook_url
+        if webhook_token is not None:
+            payload["webhook_token"] = webhook_token
+        return await self._request("POST", "/v1/register", json=payload)
 
     async def get_claw(self, claw_id: str) -> dict[str, Any]:
         """Get public info for a claw.
@@ -95,6 +102,24 @@ class RelayClient:
             {} (empty dict on success, HTTP 204)
         """
         return await self._request("DELETE", f"/v1/claws/{claw_id}")
+
+    # ── Webhook ────────────────────────────────────────────────
+
+    async def update_webhook(
+        self,
+        claw_id: str,
+        webhook_url: str | None = None,
+        webhook_token: str | None = None,
+    ) -> dict[str, Any]:
+        """Update webhook configuration for push notifications."""
+        return await self._request(
+            "PATCH",
+            f"/v1/claws/{claw_id}/webhook",
+            json={
+                "webhook_url": webhook_url,
+                "webhook_token": webhook_token,
+            },
+        )
 
     # ── Friends ────────────────────────────────────────────────
 

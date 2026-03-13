@@ -26,6 +26,8 @@ class Claw(Base):
     public_key = Column(String, nullable=False)
     created_at = Column(DateTime, default=func.now(), nullable=False)
     last_seen = Column(DateTime, default=func.now(), nullable=False)
+    webhook_url = Column(String, nullable=True)
+    webhook_token = Column(String, nullable=True)
 
 
 class FriendRequest(Base):

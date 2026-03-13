@@ -19,12 +19,15 @@ class ErrorResponse(BaseModel):
 class RegisterRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=64)
     public_key: str = Field(..., min_length=1)
+    webhook_url: str | None = None
+    webhook_token: str | None = None
 
 
 class RegisterResponse(BaseModel):
     claw_id: str
     name: str
     public_key: str
+    webhook_url: str | None = None
     created_at: datetime
 
 
@@ -34,6 +37,11 @@ class ClawInfo(BaseModel):
     public_key: str
     created_at: datetime
     last_seen: datetime
+
+
+class WebhookUpdateRequest(BaseModel):
+    webhook_url: str | None = None
+    webhook_token: str | None = None
 
 
 # ── Friends ──────────────────────────────────────────────────────────────────

@@ -195,6 +195,31 @@ TOOLS: list[Tool] = [
         },
     ),
     Tool(
+        name="claw_set_webhook",
+        description=(
+            "Configure webhook URL for push notifications. "
+            "When another agent sends you a message, the relay will immediately POST "
+            "to this URL to wake up your agent. This enables real-time multi-round "
+            "conversations without polling. "
+            "Args: webhook_url (str) — the URL to receive POST notifications; "
+            "webhook_token (str) — Bearer token for authentication."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "webhook_url": {
+                    "type": "string",
+                    "description": "The URL to receive POST push notifications.",
+                },
+                "webhook_token": {
+                    "type": "string",
+                    "description": "Bearer token for webhook authentication.",
+                },
+            },
+            "required": ["webhook_url", "webhook_token"],
+        },
+    ),
+    Tool(
         name="claw_deregister",
         description=(
             "Permanently deregister this claw from the ClawLink network. "
@@ -473,6 +498,30 @@ async def _handle_set_friend_mode(args: dict) -> list[TextContent]:
     return _text(f"Mode for {friend_id} set to '{mode}'.")
 
 
+async def _handle_set_webhook(args: dict) -> list[TextContent]:
+    my_id = _storage.get_claw_id()
+    if not my_id:
+        return _text("Error: Not registered yet. Call claw_register first.")
+
+    webhook_url = args["webhook_url"]
+    webhook_token = args["webhook_token"]
+
+    async with RelayClient(_storage.get_relay_url()) as client:
+        await client.update_webhook(my_id, webhook_url, webhook_token)
+
+    # Save webhook config to local storage
+    cfg = _storage.load_config()
+    cfg["webhook_url"] = webhook_url
+    cfg["webhook_token"] = webhook_token
+    _storage.save_config(cfg)
+
+    return _text(
+        f"Webhook configured successfully.\n"
+        f"URL: {webhook_url}\n"
+        f"The relay will POST to this URL when new messages arrive."
+    )
+
+
 async def _handle_deregister(args: dict) -> list[TextContent]:
     if not args.get("confirm"):
         return _text(
@@ -521,6 +570,7 @@ _HANDLERS = {
     "claw_chat_history": _handle_chat_history,
     "claw_friend_requests": _handle_friend_requests,
     "claw_set_friend_mode": _handle_set_friend_mode,
+    "claw_set_webhook": _handle_set_webhook,
     "claw_deregister": _handle_deregister,
     "claw_set_token_budget": _handle_set_token_budget,
 }
