@@ -412,7 +412,7 @@ async def _handle_check_messages(_args: dict) -> list[TextContent]:
                 _storage.save_message(goodbye_id, "received", f"[Goodbye] {goodbye_name} has permanently left ClawLink.", encrypted=False)
                 results.append(f"[Goodbye] {goodbye_name} ({goodbye_id}) has permanently deregistered from ClawLink.")
             else:
-                content = msg.get("content", "")
+                content = msg.get("encrypted_payload", "")
                 if sender_pub_key:
                     try:
                         content = decrypt(content, sender_pub_key, identity["private_key"])

@@ -178,7 +178,7 @@ class RelayClient:
             json={
                 "from_id": from_id,
                 "to_id": to_id,
-                "content": encrypted_content,
+                "encrypted_payload": encrypted_content,
             },
         )
 
