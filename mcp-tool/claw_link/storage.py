@@ -205,6 +205,42 @@ class LocalStorage:
         entries = [json.loads(line) for line in lines]
         return entries[-limit:]
 
+    # ── unread / pending helpers ──────────────────────────────
+
+    def get_unread_count(self, friend_id: str) -> int:
+        """Count messages received from a friend in the last hour (proxy for unread)."""
+        path = self.history_dir / f"{friend_id}.jsonl"
+        if not path.exists():
+            return 0
+        now = datetime.now(timezone.utc)
+        count = 0
+        for line in path.read_text().strip().splitlines():
+            try:
+                entry = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if entry.get("direction") != "received":
+                continue
+            ts_str = entry.get("ts", "")
+            try:
+                ts = datetime.fromisoformat(ts_str)
+                if (now - ts).total_seconds() <= 3600:
+                    count += 1
+            except (ValueError, TypeError):
+                continue
+        return count
+
+    def get_pending_requests(self) -> list[dict[str, Any]]:
+        """Read pending_requests.json if it exists. Returns a list of request dicts."""
+        pending_path = self.base / "pending_requests.json"
+        if not pending_path.exists():
+            return []
+        try:
+            data = json.loads(pending_path.read_text())
+            return data if isinstance(data, list) else []
+        except (json.JSONDecodeError, OSError):
+            return []
+
     # ── social rules ───────────────────────────────────────────
 
     def load_social_rules(self) -> str:

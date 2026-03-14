@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import subprocess
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -240,6 +242,26 @@ TOOLS: list[Tool] = [
                 },
             },
             "required": ["confirm"],
+        },
+    ),
+    Tool(
+        name="claw_setup_automation",
+        description=(
+            "Set up automatic ClawLink checking for OpenClaw. "
+            "Creates a cron job that periodically checks for new messages and friend requests, "
+            "auto-accepts friend requests, and responds to messages. "
+            "Call this once after installing ClawLink to enable proactive behavior. "
+            "Args: interval_minutes (int, optional) — check interval in minutes (default 5)."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "interval_minutes": {
+                    "type": "integer",
+                    "description": "Check interval in minutes (default 5).",
+                    "default": 5,
+                },
+            },
         },
     ),
     Tool(
@@ -568,6 +590,44 @@ async def _handle_set_token_budget(args: dict) -> list[TextContent]:
     return _json_text({"message": "Token budget updated.", "limits": limits})
 
 
+async def _handle_setup_automation(args: dict) -> list[TextContent]:
+    interval = args.get("interval_minutes", 5)
+    every_ms = interval * 60000
+    message = (
+        "检查 ClawLink 状态："
+        "1) 调用 claw_friend_requests 查看好友请求，有的话用 claw_accept_friend 接受。"
+        "2) 调用 claw_check_messages 查看新消息并回复。"
+        "3) 简要汇报处理结果。"
+    )
+    cmd = [
+        "openclaw", "cron", "add",
+        "--name", "clawlink-check",
+        "--every", str(every_ms),
+        "--session", "isolated",
+        "--message", message,
+    ]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        if result.returncode == 0:
+            return _text(
+                f"Automation set up successfully!\n"
+                f"Cron job 'clawlink-check' will run every {interval} minute(s).\n"
+                f"It will auto-accept friend requests and respond to messages.\n"
+                f"{result.stdout.strip()}"
+            )
+        else:
+            stderr = result.stderr.strip() or result.stdout.strip()
+            return _text(f"Failed to set up automation (exit code {result.returncode}):\n{stderr}")
+    except FileNotFoundError:
+        return _text(
+            "Error: 'openclaw' command not found.\n"
+            "Please install OpenClaw first, or manually set up a cron job that periodically "
+            "invokes the claw_check_messages and claw_friend_requests tools."
+        )
+    except subprocess.TimeoutExpired:
+        return _text("Error: 'openclaw cron add' timed out after 30 seconds.")
+
+
 _HANDLERS = {
     "claw_register": _handle_register,
     "claw_add_friend": _handle_add_friend,
@@ -581,6 +641,7 @@ _HANDLERS = {
     "claw_set_webhook": _handle_set_webhook,
     "claw_deregister": _handle_deregister,
     "claw_set_token_budget": _handle_set_token_budget,
+    "claw_setup_automation": _handle_setup_automation,
 }
 
 
@@ -611,6 +672,98 @@ def create_server() -> Server:
     return server
 
 
+def _update_context_file() -> None:
+    """Write ~/.claw-link/CLAWLINK.md with current status for LLM context injection."""
+    claw_id = _storage.get_claw_id()
+    if not claw_id:
+        return
+
+    name = _storage.get_name() or "Unknown"
+    friends = _storage.load_friends()
+    pending = _storage.get_pending_requests()
+
+    # Build friend table rows
+    friend_rows: list[str] = []
+    for fid, info in friends.items():
+        fname = info.get("name", "Unknown")
+        mode = info.get("mode", "notify")
+        status = info.get("status", "active")
+        if status == "deregistered":
+            fname += " [offline]"
+        friend_rows.append(f"| {fname} | {fid} | {mode} |")
+
+    # Count unread messages per friend
+    unread_items: list[str] = []
+    for fid, info in friends.items():
+        count = _storage.get_unread_count(fid)
+        if count > 0:
+            fname = info.get("name", fid)
+            unread_items.append(f"- {count} unread message(s) from {fname}")
+
+    # Build pending requests items
+    pending_items: list[str] = []
+    if pending:
+        from_ids = [r.get("from_id", "unknown") for r in pending]
+        pending_items.append(
+            f"- {len(pending)} pending friend request(s) "
+            f"(from {', '.join(from_ids)})"
+        )
+
+    # Assemble the markdown
+    lines = [
+        "# ClawLink",
+        "",
+        "You have ClawLink installed. You can communicate with other AI assistants (claws) directly.",
+        "",
+        "## Your identity",
+        f"- Claw ID: {claw_id}",
+        f"- Name: {name}",
+    ]
+
+    if friend_rows:
+        lines += [
+            "",
+            "## Friends",
+            "| Name | Claw ID | Mode |",
+            "|---|---|---|",
+            *friend_rows,
+        ]
+    else:
+        lines += ["", "## Friends", "No friends yet."]
+
+    if pending_items or unread_items:
+        lines += ["", "## Pending"]
+        lines += pending_items
+        lines += unread_items
+
+    lines += [
+        "",
+        "## Quick reference",
+        '- When the owner mentions a friend by name (e.g. "ask Bob..."), use claw_send_message',
+        "- Accept friend requests with claw_accept_friend",
+        "- Check new messages with claw_check_messages",
+        "",
+    ]
+
+    content = "\n".join(lines)
+
+    # Write to primary location
+    try:
+        _storage.ensure_dirs()
+        primary = _storage.base / "CLAWLINK.md"
+        primary.write_text(content, encoding="utf-8")
+    except Exception as e:
+        logger.debug(f"Failed to write primary CLAWLINK.md: {e}")
+
+    # Also try OpenClaw workspace location
+    try:
+        openclaw_dir = Path.home() / ".openclaw" / "workspace"
+        openclaw_dir.mkdir(parents=True, exist_ok=True)
+        (openclaw_dir / "CLAWLINK.md").write_text(content, encoding="utf-8")
+    except Exception as e:
+        logger.debug(f"Failed to write OpenClaw CLAWLINK.md: {e}")
+
+
 async def _sync_friends() -> None:
     """Sync friend list from relay to local storage."""
     my_id = _storage.get_claw_id()
@@ -622,7 +775,7 @@ async def _sync_friends() -> None:
             local_friends = _storage.load_friends()
             for f in remote_friends:
                 fid = f.get("claw_id", "")
-                if fid and fid not in local_friends:
+                if fid and (fid not in local_friends or not local_friends.get(fid, {}).get("public_key")):
                     friend_info = await client.get_claw(fid)
                     _storage.add_friend(
                         fid,
@@ -659,6 +812,20 @@ async def _poll_messages() -> None:
                         f"[Goodbye] {goodbye_name} has permanently left ClawLink.", encrypted=False)
                     logger.info(f"Goodbye from {goodbye_name} ({goodbye_id})")
                 else:
+                    # If sender's public key is missing, re-sync friends and retry
+                    if not sender_pub_key and from_id:
+                        logger.warning(f"Unknown sender {from_id}, re-syncing friends...")
+                        await _sync_friends()
+                        friends = _storage.load_friends()
+                        friend = friends.get(from_id, {})
+                        sender_pub_key = friend.get("public_key", "")
+
+                    if not sender_pub_key and from_id:
+                        # Still no public key after sync — skip this message so it
+                        # can be retried on next poll (do NOT ack or save)
+                        logger.warning(f"Still no public key for {from_id} after sync, skipping message")
+                        continue
+
                     content = encrypted_payload
                     if sender_pub_key:
                         try:
@@ -747,8 +914,10 @@ async def _handle_sse_event(event: dict) -> None:
     elif event_type == "friend_accepted":
         logger.info(f"Friend request accepted by {event.get('friend_name', '?')}")
         await _sync_friends()
+        await _poll_messages()
     else:
         logger.debug(f"SSE: unknown event type '{event_type}'")
+    _update_context_file()
 
 
 async def _background_loop() -> None:
@@ -763,6 +932,7 @@ async def _background_loop() -> None:
             await _sync_friends()
             await _poll_messages()
             await _check_friend_requests()
+            _update_context_file()
         except Exception as e:
             logger.debug(f"Background poll error: {e}")
 
@@ -775,6 +945,7 @@ async def run_server() -> None:
         await _sync_friends()
         await _poll_messages()
         await _check_friend_requests()
+        _update_context_file()
 
         # Start SSE (primary) and polling (fallback) tasks
         sse_task = asyncio.create_task(_sse_loop())
