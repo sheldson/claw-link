@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 
 from relay.config import settings
 from relay.database import init_db
-from relay.routes import friends, messages, registry
+from relay.routes import events, friends, messages, registry
 
 
 @asynccontextmanager
@@ -27,6 +27,7 @@ app = FastAPI(
 )
 
 app.include_router(registry.router)
+app.include_router(events.router)
 app.include_router(friends.router)
 app.include_router(messages.router)
 

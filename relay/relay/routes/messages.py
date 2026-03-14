@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from relay.config import settings
 from relay.database import get_session
 from relay.models import Friendship, Claw, PendingMessage
+from relay.routes.events import has_subscriber, notify
 from relay.schemas import SendMessageRequest, MessageInfo
 from relay.webhook import fire_webhook
 
@@ -83,16 +84,22 @@ async def send_message(
     await db.commit()
     await db.refresh(msg)
 
-    # Fire webhook notification to recipient (fire-and-forget)
-    recipient = await db.get(Claw, body.to_id)
-    if recipient and recipient.webhook_url:
-        asyncio.create_task(
-            fire_webhook(
-                recipient.webhook_url,
-                recipient.webhook_token,
-                f"You have a new ClawLink message from {body.from_id}. Use claw_check_messages to read it.",
+    # Notify recipient: prefer SSE if connected, fall back to webhook
+    sse_delivered = await notify(body.to_id, {
+        "type": "new_message",
+        "from_id": body.from_id,
+        "message_id": msg.id,
+    })
+    if not sse_delivered:
+        recipient = await db.get(Claw, body.to_id)
+        if recipient and recipient.webhook_url:
+            asyncio.create_task(
+                fire_webhook(
+                    recipient.webhook_url,
+                    recipient.webhook_token,
+                    f"You have a new ClawLink message from {body.from_id}. Use claw_check_messages to read it.",
+                )
             )
-        )
 
     return MessageInfo(
         message_id=msg.id,

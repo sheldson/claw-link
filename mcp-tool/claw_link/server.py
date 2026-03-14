@@ -7,6 +7,7 @@ import json
 import logging
 from typing import Any
 
+import httpx
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import TextContent, Tool
@@ -20,7 +21,8 @@ logger = logging.getLogger("claw-link")
 # ── Globals ────────────────────────────────────────────────────
 
 _storage = LocalStorage()
-_POLL_INTERVAL = 30  # seconds between background polls
+_POLL_INTERVAL = 60  # seconds between background polls (fallback; SSE is primary)
+_SSE_RECONNECT_DELAY = 5  # seconds before SSE reconnect after error
 
 TOOLS: list[Tool] = [
     Tool(
@@ -693,13 +695,65 @@ async def _check_friend_requests() -> None:
         logger.debug(f"Friend request check failed: {e}")
 
 
+async def _sse_loop() -> None:
+    """Primary real-time channel: connect to relay SSE stream and react to events."""
+    while True:
+        claw_id = _storage.get_claw_id()
+        if not claw_id:
+            # Not registered yet — wait and retry
+            await asyncio.sleep(_SSE_RECONNECT_DELAY)
+            continue
+
+        relay_url = _storage.get_relay_url().rstrip("/")
+        sse_url = f"{relay_url}/v1/events/{claw_id}/stream"
+
+        try:
+            async with httpx.AsyncClient(timeout=None) as client:
+                async with client.stream("GET", sse_url) as response:
+                    response.raise_for_status()
+                    logger.info(f"SSE connected to {sse_url}")
+                    async for line in response.aiter_lines():
+                        if not line or line.startswith(":"):
+                            # Empty line (event delimiter) or comment/keepalive
+                            continue
+                        if line.startswith("data:"):
+                            payload = line[len("data:"):].strip()
+                            if not payload:
+                                continue
+                            try:
+                                event = json.loads(payload)
+                            except json.JSONDecodeError:
+                                logger.debug(f"SSE: invalid JSON payload: {payload[:100]}")
+                                continue
+                            await _handle_sse_event(event)
+        except httpx.HTTPStatusError as e:
+            logger.warning(f"SSE HTTP error {e.response.status_code}, reconnecting in {_SSE_RECONNECT_DELAY}s")
+        except (httpx.ConnectError, httpx.ReadError, httpx.RemoteProtocolError) as e:
+            logger.debug(f"SSE connection lost ({type(e).__name__}), reconnecting in {_SSE_RECONNECT_DELAY}s")
+        except Exception as e:
+            logger.warning(f"SSE unexpected error: {type(e).__name__}: {e}, reconnecting in {_SSE_RECONNECT_DELAY}s")
+
+        await asyncio.sleep(_SSE_RECONNECT_DELAY)
+
+
+async def _handle_sse_event(event: dict) -> None:
+    """Dispatch an SSE event to the appropriate handler."""
+    event_type = event.get("type", "")
+    if event_type == "new_message":
+        await _poll_messages()
+    elif event_type == "friend_request":
+        await _check_friend_requests()
+        await _sync_friends()
+    else:
+        logger.debug(f"SSE: unknown event type '{event_type}'")
+
+
 async def _background_loop() -> None:
-    """Background task: sync friends + poll messages + check requests every _POLL_INTERVAL seconds."""
-    # Initial sync on startup
-    await _sync_friends()
-    await _poll_messages()
-    await _check_friend_requests()
-    # Then loop
+    """Fallback background task: sync friends + poll messages + check requests at reduced frequency.
+
+    SSE is the primary channel; this loop acts as a safety net in case
+    the SSE connection drops events.
+    """
     while True:
         await asyncio.sleep(_POLL_INTERVAL)
         try:
@@ -711,19 +765,27 @@ async def _background_loop() -> None:
 
 
 async def run_server() -> None:
-    """Run the MCP server over stdio with background message polling."""
+    """Run the MCP server over stdio with SSE event stream and fallback polling."""
     server = create_server()
     async with stdio_server() as (read_stream, write_stream):
-        # Start background polling task
-        bg_task = asyncio.create_task(_background_loop())
+        # Initial sync before starting event loops
+        await _sync_friends()
+        await _poll_messages()
+        await _check_friend_requests()
+
+        # Start SSE (primary) and polling (fallback) tasks
+        sse_task = asyncio.create_task(_sse_loop())
+        poll_task = asyncio.create_task(_background_loop())
         try:
             await server.run(read_stream, write_stream, server.create_initialization_options())
         finally:
-            bg_task.cancel()
-            try:
-                await bg_task
-            except asyncio.CancelledError:
-                pass
+            sse_task.cancel()
+            poll_task.cancel()
+            for task in (sse_task, poll_task):
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
 
 
 def main() -> None:
