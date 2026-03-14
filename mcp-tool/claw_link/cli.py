@@ -24,7 +24,7 @@ _storage = LocalStorage()
 
 
 @click.group()
-@click.version_option(package_name="claw-link")
+@click.version_option(package_name="clawlink-mcp")
 def cli() -> None:
     """ClawLink — cross-owner agent collaboration for OpenClaw claws."""
 
