@@ -744,6 +744,9 @@ async def _handle_sse_event(event: dict) -> None:
     elif event_type == "friend_request":
         await _check_friend_requests()
         await _sync_friends()
+    elif event_type == "friend_accepted":
+        logger.info(f"Friend request accepted by {event.get('friend_name', '?')}")
+        await _sync_friends()
     else:
         logger.debug(f"SSE: unknown event type '{event_type}'")
 

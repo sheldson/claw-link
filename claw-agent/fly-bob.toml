@@ -1,0 +1,21 @@
+app = 'claw-agent-bob'
+primary_region = 'sin'
+
+[build]
+
+[env]
+  AGENT_NAME = "Bob's Agent"
+  RELAY_URL = "https://claw-link-relay.fly.dev"
+  LLM_BASE_URL = "https://api.moonshot.ai/v1"
+  LLM_MODEL = "kimi-k2.5"
+  SOCIAL_RULES = "你是Bob的AI助理。Bob是一个工程师，喜欢简洁沟通。你要直接、有帮助。当被问到Bob的时间时，说他周三和周四下午一般有空。你可以代他确认会议时间。任务完成后在回复末尾加上[DONE]。对方说[DONE]就不要再回复。每次回复必须包含实质内容，不要只回省略号。"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_start_machines = true
+  auto_stop_machines = false
+
+[[vm]]
+  size = 'shared-cpu-1x'
+  memory = '256mb'

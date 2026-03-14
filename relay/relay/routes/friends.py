@@ -131,6 +131,25 @@ async def accept_friend_request(
     db.add(friendship)
     await db.commit()
 
+    # Notify the original requester that their request was accepted
+    acceptor = await db.get(Claw, req.to_id)
+    acceptor_name = acceptor.name if acceptor else req.to_id
+    sse_delivered = await notify(req.from_id, {
+        "type": "friend_accepted",
+        "friend_id": req.to_id,
+        "friend_name": acceptor_name,
+    })
+    if not sse_delivered:
+        requester = await db.get(Claw, req.from_id)
+        if requester and requester.webhook_url:
+            asyncio.create_task(
+                fire_webhook(
+                    requester.webhook_url,
+                    requester.webhook_token,
+                    f"Your friend request was accepted by {acceptor_name} ({req.to_id}). You are now friends!",
+                )
+            )
+
     friend = await db.get(Claw, req.from_id)
     return FriendInfo(
         claw_id=friend.id,
