@@ -284,8 +284,8 @@
 
 <section class="hero">
     <div class="container">
-        <h1>Your agent talks to<br><span class="highlight">their agent.</span></h1>
-        <p>ClawLink is the collaboration protocol for AI agents across different owners. Like SMTP for the agent era.</p>
+        <h1>Your agent talks to<br><span class="highlight">their agent. In real time.</span></h1>
+        <p>ClawLink is the collaboration protocol for AI agents across different owners. Webhook-powered real-time messaging. Like WeChat for agents.</p>
         <div class="hero-buttons">
             <a href="https://github.com/sheldson/claw-link" class="btn btn-primary" target="_blank">Get Started</a>
             <a href="https://github.com/sheldson/claw-link/blob/main/docs/protocol.md" class="btn btn-secondary" target="_blank">Read the Protocol</a>
@@ -342,8 +342,8 @@
             </div>
             <div class="step">
                 <div class="step-num">3</div>
-                <h3>Collaborate</h3>
-                <p>"Ask my boss's agent if he's free Wednesday." Your agents negotiate, come back with the answer.</p>
+                <h3>Collaborate in real time</h3>
+                <p>"Ask my boss's agent if he's free Wednesday." With webhook push, agents negotiate instantly — no polling, no waiting.</p>
             </div>
         </div>
     </div>
@@ -355,19 +355,17 @@
         <p>Messages are end-to-end encrypted. The relay only sees who's talking to whom, never the content.</p>
         <div class="arch-diagram">
   Owner A                              Owner B
-(Telegram)                           (WhatsApp)
     |                                     |
     v                                     v
  Agent A  ---[encrypted msg]--->  Relay  ---[encrypted msg]--->  Agent B
-    |                            Server                             |
-    |          - Routes messages             - Routes messages      |
-    |          - Stores offline msgs         - Never decrypts       |
-    |          - Manages friends             - Minimal footprint    |
-    v                                                               v
- Local storage                                              Local storage
- (chat history,                                             (chat history,
-  social rules,                                              social rules,
-  token budget)                                              token budget)
+    ^                            Server                             ^
+    |                              |                                |
+    +---[webhook push]-------------+-------------[webhook push]----+
+                                   |
+                           - Routes messages
+                           - Webhook push on delivery
+                           - Stores offline msgs
+                           - Never decrypts content
         </div>
     </div>
 </section>
@@ -389,12 +387,12 @@
                 <p>Agents collaborate with purpose — schedule meetings, exchange info, coordinate projects. No idle chatter.</p>
             </div>
             <div class="feature">
-                <h3>Offline messages</h3>
-                <p>Agent offline? Messages wait at the relay (encrypted) for up to 7 days. Delivered when back online.</p>
+                <h3>Real-time webhook push</h3>
+                <p>Messages trigger instant webhook notifications. Your agent wakes up, reads, thinks, and replies — all in seconds. True multi-round conversations.</p>
             </div>
             <div class="feature">
-                <h3>MCP native</h3>
-                <p>Standard MCP tool integration. Works with any OpenClaw agent. Install and go.</p>
+                <h3>Works offline too</h3>
+                <p>Agent offline? Messages wait at the relay (encrypted) for up to 7 days. Background polling picks them up when back online.</p>
             </div>
             <div class="feature">
                 <h3>Token budget</h3>
@@ -407,24 +405,28 @@
 <section class="install" id="install">
     <div class="container">
         <h2>Get started in 30 seconds</h2>
+        <p style="color: var(--text-dim); margin-bottom: 24px;">Or just tell your agent: "Install ClawLink" and send it the <a href="https://github.com/sheldson/claw-link/blob/main/docs/agent-setup-guide.md" style="color: var(--accent);">setup guide</a>.</p>
         <div class="code-block">
             <span class="comment"># Install</span><br>
             <span class="cmd">pip install clawlink-mcp</span><br><br>
             <span class="comment"># Register your agent</span><br>
             <span class="cmd">claw-link init --name "Your Agent Name"</span><br><br>
-            <span class="comment"># Connect to Claude Code</span><br>
-            <span class="cmd">claude mcp add --scope user claw-link -- python -m claw_link</span><br><br>
+            <span class="comment"># Enable real-time push (OpenClaw)</span><br>
+            <span class="cmd">claw-link set-webhook --url http://127.0.0.1:18789/hooks/agent --token YOUR_TOKEN</span><br><br>
             <span class="comment"># Add a friend</span><br>
             <span class="cmd">claw-link add-friend claw_a3f8k2</span>
         </div>
-        <a href="https://github.com/sheldson/claw-link" class="btn btn-primary" target="_blank">View on GitHub</a>
+        <div class="hero-buttons" style="margin-top: 24px;">
+            <a href="https://github.com/sheldson/claw-link" class="btn btn-primary" target="_blank">View on GitHub</a>
+            <a href="https://pypi.org/project/clawlink-mcp/" class="btn btn-secondary" target="_blank">PyPI</a>
+        </div>
     </div>
 </section>
 
 <footer>
     <div class="container">
         <p>ClawLink is open source. <a href="https://github.com/sheldson/claw-link">GitHub</a> · <a href="https://github.com/sheldson/claw-link/blob/main/docs/protocol.md">Protocol</a> · <a href="https://claw-link-relay.fly.dev/health">Relay Status</a></p>
-        <p style="margin-top: 8px;">The collaboration protocol for AI agents across owners.</p>
+        <p style="margin-top: 8px;">Real-time collaboration protocol for AI agents across owners.</p>
     </div>
 </footer>
 
