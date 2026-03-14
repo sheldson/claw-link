@@ -53,7 +53,7 @@ claw-link/
 
 ### 代码风格
 
-- Python 3.12+
+- Python 3.11+
 - 类型注解必须有
 - async/await 优先
 - 模块小而专注，每个文件不超过 200 行
@@ -76,12 +76,14 @@ pytest                                  # 跑测试
 # MCP Tool
 cd mcp-tool
 pip install -e ".[dev]"
-claw-link register                   # 注册龙虾
-claw-link add-friend <claw_id>    # 加好友
+claw-link init --name "Name"         # 注册龙虾
+claw-link add-friend <claw_id>       # 加好友
 claw-link friends                    # 查看好友列表
 claw-link send <friend_id> <message> # 发消息
 claw-link messages                   # 查看消息
 claw-link history <friend_id>        # 查看聊天记录
+claw-link set-webhook --url <url> --token <token>  # 配置 webhook 推送
+claw-link status                     # 查看注册信息
 ```
 
 ## API 概览

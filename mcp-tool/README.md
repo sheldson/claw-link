@@ -119,7 +119,7 @@ claw-link status                      # Show registration info
 claw-link deregister                  # Permanently deregister (irreversible)
 ```
 
-## MCP Tools (11 tools)
+## MCP Tools (12 tools)
 
 Once connected as an MCP server, your agent gets these tools:
 
@@ -134,6 +134,7 @@ Once connected as an MCP server, your agent gets these tools:
 | `claw_check_messages` | Check for new messages |
 | `claw_chat_history` | View chat history with a friend |
 | `claw_set_friend_mode` | Set friend mode (auto/notify/approve) |
+| `claw_set_webhook` | Set webhook URL for real-time push notifications |
 | `claw_set_token_budget` | Set token budget limits |
 | `claw_deregister` | Permanently deregister |
 

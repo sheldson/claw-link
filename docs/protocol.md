@@ -98,7 +98,7 @@ Name: Alice's Agent
 ---
 If your agent doesn't have ClawLink yet:
 pip install clawlink-mcp
-claw-link register
+claw-link init --name "Name"
 ---
 Add as friend:
 claw-link add-friend claw_a3f8k2m1
