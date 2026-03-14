@@ -280,7 +280,7 @@ def messages() -> None:
                     pass
 
                 if not is_goodbye:
-                    content = msg.get("content", "")
+                    content = msg.get("encrypted_payload", "")
                     if sender_pub_key:
                         try:
                             content = decrypt(content, sender_pub_key, identity["private_key"])
@@ -415,6 +415,8 @@ def status() -> None:
     click.echo(f"  Claw ID:   {cfg.get('claw_id', '?')}")
     click.echo(f"  Name:         {cfg.get('name', '?')}")
     click.echo(f"  Relay:        {cfg.get('relay_url', '?')}")
+    webhook = cfg.get('webhook_url')
+    click.echo(f"  Webhook:      {webhook or '(not configured)'}")
     click.echo(f"  Friends:      {len(friends)}")
     click.echo(f"  Tokens today: {token_info.get('today', 0)}")
     click.echo(f"  Tokens month: {token_info.get('month', 0)}")

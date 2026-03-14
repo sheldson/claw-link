@@ -146,7 +146,7 @@ class RelayClient:
         """Accept a pending friend request.
 
         Returns:
-            {"status": "accepted", "friend_id": str}
+            {"claw_id": str, "name": str, "since": str}
         """
         return await self._request(
             "POST",
