@@ -104,6 +104,23 @@ def add_friend(claw_id: str, message: str) -> None:
 @cli.command("friends")
 def list_friends() -> None:
     """List all friends."""
+    # Auto-sync from relay first
+    my_id = _storage.get_claw_id()
+    if my_id:
+        async def sync() -> None:
+            async with RelayClient(_storage.get_relay_url()) as client:
+                remote = await client.list_friends(my_id)
+                local = _storage.load_friends()
+                for f in remote:
+                    fid = f.get("claw_id", "")
+                    if fid and fid not in local:
+                        info = await client.get_claw(fid)
+                        _storage.add_friend(fid, name=f.get("name", "Unknown"), public_key=info.get("public_key", ""))
+        try:
+            _run(sync())
+        except Exception:
+            pass
+
     friends = _storage.load_friends()
     if not friends:
         click.echo("No friends yet.")
@@ -117,6 +134,73 @@ def list_friends() -> None:
         status = info.get("status", "active")
         status_suffix = " [DEREGISTERED]" if status == "deregistered" else ""
         click.echo(f"  {name} (ID: {fid}) — mode: {mode}, added: {added}{status_suffix}")
+
+
+@cli.command("requests")
+def list_requests() -> None:
+    """List pending incoming friend requests."""
+    my_id = _storage.get_claw_id()
+    if not my_id:
+        click.echo("Not initialized. Run `claw-link init` first.", err=True)
+        sys.exit(1)
+
+    async def do_list() -> list[dict]:
+        async with RelayClient(_storage.get_relay_url()) as client:
+            return await client.get_friend_requests(my_id)
+
+    try:
+        reqs = _run(do_list())
+    except RelayError as e:
+        click.echo(f"Failed: {e.detail}", err=True)
+        sys.exit(1)
+
+    if not reqs:
+        click.echo("No pending friend requests.")
+        return
+
+    click.echo(f"Pending friend requests ({len(reqs)}):\n")
+    for req in reqs:
+        rid = req.get("request_id", "?")
+        from_id = req.get("from_id", "?")
+        click.echo(f"  From: {from_id}")
+        click.echo(f"  Request ID: {rid}")
+        click.echo(f"  Accept with: claw-link accept {rid}\n")
+
+
+@cli.command("accept")
+@click.argument("request_id")
+def accept_request(request_id: str) -> None:
+    """Accept a pending friend request."""
+    my_id = _storage.get_claw_id()
+    if not my_id:
+        click.echo("Not initialized. Run `claw-link init` first.", err=True)
+        sys.exit(1)
+
+    async def do_accept() -> dict:
+        async with RelayClient(_storage.get_relay_url()) as client:
+            result = await client.accept_friend(my_id, request_id)
+            # Auto-sync: save friend to local storage
+            friend_id = result.get("claw_id", "")
+            if friend_id:
+                friend_info = await client.get_claw(friend_id)
+                _storage.add_friend(
+                    friend_id,
+                    name=friend_info.get("name", "Unknown"),
+                    public_key=friend_info.get("public_key", ""),
+                )
+            return result
+
+    try:
+        result = _run(do_accept())
+    except RelayError as e:
+        click.echo(f"Failed: {e.detail}", err=True)
+        sys.exit(1)
+
+    friend_id = result.get("claw_id", "?")
+    friend_name = result.get("name", "?")
+    click.echo(f"Friend request accepted!")
+    click.echo(f"  Friend: {friend_name} ({friend_id})")
+    click.echo(f"  You can now exchange messages.")
 
 
 @cli.command("send")

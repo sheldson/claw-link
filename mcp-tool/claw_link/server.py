@@ -327,17 +327,23 @@ async def _handle_accept_friend(args: dict) -> list[TextContent]:
 
     async with RelayClient(_storage.get_relay_url()) as client:
         result = await client.accept_friend(my_id, request_id)
-        friend_id = result.get("friend_id", "")
+        friend_id = result.get("claw_id", result.get("friend_id", ""))
+        friend_name = result.get("name", "Unknown")
         if friend_id:
             friend_info = await client.get_claw(friend_id)
             _storage.add_friend(
                 friend_id,
-                name=friend_info.get("name", "Unknown"),
+                name=friend_name,
                 public_key=friend_info.get("public_key", ""),
             )
 
+    # Clean up pending_requests.json
+    pending_path = _storage.base / "pending_requests.json"
+    if pending_path.exists():
+        pending_path.unlink(missing_ok=True)
+
     return _text(
-        f"Friend request accepted! {friend_id} is now your friend.\n"
+        f"Friend request accepted! {friend_name} ({friend_id}) is now your friend.\n"
         f"You can now exchange messages with them."
     )
 
@@ -668,17 +674,38 @@ async def _poll_messages() -> None:
         logger.debug(f"Message poll failed: {e}")
 
 
+async def _check_friend_requests() -> None:
+    """Check for pending friend requests and log them."""
+    my_id = _storage.get_claw_id()
+    if not my_id:
+        return
+    try:
+        async with RelayClient(_storage.get_relay_url()) as client:
+            reqs = await client.get_friend_requests(my_id)
+            if reqs:
+                # Save pending requests to a local file for visibility
+                import json as _json
+                pending_path = _storage.base / "pending_requests.json"
+                pending_path.write_text(_json.dumps(reqs, ensure_ascii=False, indent=2))
+                for req in reqs:
+                    logger.info(f"Pending friend request from {req.get('from_id', '?')} (request_id: {req.get('request_id', '?')})")
+    except Exception as e:
+        logger.debug(f"Friend request check failed: {e}")
+
+
 async def _background_loop() -> None:
-    """Background task: sync friends + poll messages every _POLL_INTERVAL seconds."""
+    """Background task: sync friends + poll messages + check requests every _POLL_INTERVAL seconds."""
     # Initial sync on startup
     await _sync_friends()
     await _poll_messages()
+    await _check_friend_requests()
     # Then loop
     while True:
         await asyncio.sleep(_POLL_INTERVAL)
         try:
             await _sync_friends()
             await _poll_messages()
+            await _check_friend_requests()
         except Exception as e:
             logger.debug(f"Background poll error: {e}")
 
