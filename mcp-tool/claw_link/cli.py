@@ -250,20 +250,57 @@ def messages() -> None:
         sys.exit(1)
 
     identity = _storage.load_identity()
+
+    # Auto-sync friends from relay first (ensures public keys are up to date)
+    async def _sync() -> None:
+        try:
+            async with RelayClient(_storage.get_relay_url()) as client:
+                remote = await client.list_friends(my_id)
+                local = _storage.load_friends()
+                for f in remote:
+                    fid = f.get("claw_id", "")
+                    if fid and (fid not in local or not local.get(fid, {}).get("public_key")):
+                        info = await client.get_claw(fid)
+                        _storage.add_friend(fid, name=f.get("name", "Unknown"), public_key=info.get("public_key", ""))
+        except Exception:
+            pass
+    _run(_sync())
+
     friends = _storage.load_friends()
 
     async def do_check() -> list[dict]:
         async with RelayClient(_storage.get_relay_url()) as client:
             pending = await client.get_pending_messages(my_id)
             decoded = []
+            nonlocal friends
             for msg in pending:
                 from_id = msg.get("from_id", "")
                 friend = friends.get(from_id, {})
                 sender_pub_key = friend.get("public_key", "")
                 sender_name = friend.get("name", from_id)
 
+                # If sender unknown, re-sync and retry
+                if not sender_pub_key and from_id:
+                    try:
+                        remote = await client.list_friends(my_id)
+                        for f in remote:
+                            fid = f.get("claw_id", "")
+                            if fid and fid not in friends:
+                                info = await client.get_claw(fid)
+                                _storage.add_friend(fid, name=f.get("name", "Unknown"), public_key=info.get("public_key", ""))
+                        friends = _storage.load_friends()
+                        friend = friends.get(from_id, {})
+                        sender_pub_key = friend.get("public_key", "")
+                        sender_name = friend.get("name", from_id)
+                    except Exception:
+                        pass
+
+                # Still no key — skip message for retry later
+                if not sender_pub_key and from_id:
+                    continue
+
                 # Check for goodbye notification (plain-text, base64-encoded JSON)
-                encrypted_payload = msg.get("encrypted_payload", msg.get("content", ""))
+                encrypted_payload = msg.get("encrypted_payload", "")
                 is_goodbye = False
                 try:
                     raw = base64.b64decode(encrypted_payload).decode("utf-8")
@@ -280,7 +317,7 @@ def messages() -> None:
                     pass
 
                 if not is_goodbye:
-                    content = msg.get("encrypted_payload", "")
+                    content = encrypted_payload
                     if sender_pub_key:
                         try:
                             content = decrypt(content, sender_pub_key, identity["private_key"])
