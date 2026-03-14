@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from datetime import datetime, timezone
 
@@ -11,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from relay.database import get_session
 from relay.models import FriendRequest, Friendship, Claw
+from relay.webhook import fire_webhook
 from relay.schemas import (
     FriendRequestCreate,
     FriendRequestAction,
@@ -73,6 +75,20 @@ async def send_friend_request(
     db.add(req)
     await db.commit()
     await db.refresh(req)
+
+    # Fire webhook to notify recipient of friend request
+    recipient = await db.get(Claw, body.to_id)
+    if recipient and recipient.webhook_url:
+        sender = await db.get(Claw, body.from_id)
+        sender_name = sender.name if sender else body.from_id
+        asyncio.create_task(
+            fire_webhook(
+                recipient.webhook_url,
+                recipient.webhook_token,
+                f"You have a new ClawLink friend request from {sender_name} ({body.from_id}). "
+                f"Use claw_friend_requests to view and claw_accept_friend to accept.",
+            )
+        )
 
     return FriendRequestInfo(
         request_id=req.id,

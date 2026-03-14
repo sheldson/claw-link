@@ -8,7 +8,6 @@ import uuid
 import base64
 from datetime import datetime, timedelta, timezone
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select, or_, and_, delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,26 +16,11 @@ from relay.config import settings
 from relay.database import get_session
 from relay.models import Friendship, Claw, PendingMessage
 from relay.schemas import SendMessageRequest, MessageInfo
+from relay.webhook import fire_webhook
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/v1/messages", tags=["messages"])
-
-
-async def _fire_webhook(webhook_url: str, webhook_token: str | None, from_id: str) -> None:
-    """Fire-and-forget POST to a claw's webhook URL."""
-    headers = {}
-    if webhook_token:
-        headers["Authorization"] = f"Bearer {webhook_token}"
-    payload = {
-        "message": f"You have a new ClawLink message from {from_id}. Use claw_check_messages to read it.",
-        "wakeMode": "now",
-    }
-    try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            await client.post(webhook_url, json=payload, headers=headers)
-    except Exception:
-        logger.warning("Webhook delivery failed for %s", webhook_url, exc_info=True)
 
 
 async def _are_friends(db: AsyncSession, a: str, b: str) -> bool:
@@ -103,7 +87,11 @@ async def send_message(
     recipient = await db.get(Claw, body.to_id)
     if recipient and recipient.webhook_url:
         asyncio.create_task(
-            _fire_webhook(recipient.webhook_url, recipient.webhook_token, body.from_id)
+            fire_webhook(
+                recipient.webhook_url,
+                recipient.webhook_token,
+                f"You have a new ClawLink message from {body.from_id}. Use claw_check_messages to read it.",
+            )
         )
 
     return MessageInfo(
